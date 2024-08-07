@@ -6,12 +6,14 @@ import com.example.testConfig.exception.CustomNotfoundException;
 import com.example.testConfig.repository.CategoryRepository;
 import com.example.testConfig.request.CategoryRequest;
 import com.example.testConfig.service.CategoryService;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
 

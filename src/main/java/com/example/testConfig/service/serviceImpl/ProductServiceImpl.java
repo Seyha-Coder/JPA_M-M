@@ -8,12 +8,16 @@ import com.example.testConfig.repository.ProductRepository;
 import com.example.testConfig.request.ProductRequest;
 import com.example.testConfig.service.CategoryService;
 import com.example.testConfig.service.ProductService;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryService categoryService;
@@ -38,22 +42,27 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product saveProduct(ProductRequest productRequest) {
-        Optional<Category> category = categoryService.findCategoryById(productRequest.getCategoryId());
-        if(!category.isPresent()){
-            throw new CustomNotfoundException("Category does not exist.");
-        }
+        Set<Category> categories = productRequest.getCategoryIds().stream()
+                .map(categoryId -> categoryService.findCategoryById(categoryId)
+                        .orElseThrow(() -> new CustomNotfoundException("Category id not found: " + categoryId)))
+                .collect(Collectors.toSet());
         Product product = Product.builder()
                 .name(productRequest.getName())
                 .description(productRequest.getDescription())
                 .qty(productRequest.getQty())
                 .price(productRequest.getPrice())
+                .categories(categories)
                 .build();
-        product.setCategory(category.get());
+
         return productRepository.save(product);
     }
     @Override
     public Product updateProduct(Integer id, ProductRequest productRequest){
-        Optional<Category> category = categoryService.findCategoryById(productRequest.getCategoryId());
+        Set<Category> categories = productRequest.getCategoryIds().stream()
+                .map(categoryId -> categoryService.findCategoryById(categoryId)
+                        .orElseThrow(() -> new CustomNotfoundException("Category id not found: " + categoryId)))
+                .collect(Collectors.toSet());
+
         Product product = productRepository.findById(id).orElseThrow(
                 () -> new CustomNotfoundException("product is not found")
         );
@@ -61,7 +70,7 @@ public class ProductServiceImpl implements ProductService {
         product.setDescription(product.getDescription());
         product.setQty(productRequest.getQty());
         product.setPrice(productRequest.getPrice());
-        product.setCategory(category.get());
+        product.setCategories(categories);
         return productRepository.save(product);
     }
     @Override
